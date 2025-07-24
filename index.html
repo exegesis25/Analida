@@ -259,8 +259,8 @@
             });
         }
 
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+     loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // <-- ESTA LÍNEA ES LA MÁS IMPORTANTE
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             loginError.classList.add('hidden');
