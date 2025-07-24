@@ -211,19 +211,26 @@
         import { getFirestore, doc, collection, addDoc, getDocs, onSnapshot, writeBatch, runTransaction, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURACIÓN DE FIREBASE ---
-        // ¡IMPORTANTE! Reemplaza este objeto con la configuración de TU PROPIO proyecto de Firebase.
-        // Puedes encontrarla en la Consola de Firebase -> Configuración del Proyecto (el ícono de engranaje).
-   // Import the functions you need from the SDKs you need
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyC2MFj3kz8l8yo_n8VDpNyEsWs8iX0RWCw",
-  authDomain: "analida-14a02.firebaseapp.com",
-  projectId: "analida-14a02",
-  storageBucket: "analida-14a02.firebasestorage.app",
-  messagingSenderId: "977559719080",
-  appId: "1:977559719080:web:817bf90d9b97a42776c69d",
-  measurementId: "G-W9L4W95PSP"
-};
+        // Tu configuración personal ya está integrada aquí.
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2MFj3kz8l8yo_n8VDpNyEsWs8iX0RWCw",
+            authDomain: "analida-14a02.firebaseapp.com",
+            projectId: "analida-14a02",
+            storageBucket: "analida-14a02.firebasestorage.app",
+            messagingSenderId: "977559719080",
+            appId: "1:977559719080:web:817bf90d9b97a42776c69d",
+            measurementId: "G-W9L4W95PSP"
+        };
+        
+        let app, db, auth, userId, unsubscribeInventory, unsubscribeHistory;
+
+        // --- INICIALIZACIÓN DE LA APP ---
+        function initialize() {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            setupAuthListener();
+        }
 
         // --- MANEJO DE AUTENTICACIÓN ---
         const loginScreen = document.getElementById('login-screen');
@@ -462,7 +469,7 @@ const firebaseConfig = {
             const resultDiv = document.getElementById('analysis-result');
             const GEMINI_API_KEY = ""; // Reemplaza con tu clave de API de Google AI Studio
             if (GEMINI_API_KEY === "") {
-                resultDiv.innerHTML = '<strong>Error:</strong> Debes añadir tu API Key de Google AI Studio en el archivo index.html para usar esta función.';
+                resultDiv.innerHTML = '<strong>Error de Configuración:</strong><br>Para usar el análisis en esta versión pública, debes obtener una API Key gratuita de Google AI Studio y pegarla en la variable GEMINI_API_KEY dentro del archivo <strong>index.html</strong>.';
                 return resultContainer.classList.remove('hidden'), resultDiv.classList.add('text-red-500');
             }
             if (allHistory.length < 3) return showNotification("Necesitas más historial para un análisis.", true);
@@ -497,4 +504,14 @@ const firebaseConfig = {
     </script>
 </body>
 </html>
+```
 
+### Siguientes Pasos
+
+Ahora solo tienes que seguir la **Fase 3** de las instrucciones anteriores:
+1.  **Ve a tu repositorio** en GitHub.
+2.  Haz clic en **"Add file"** -> **"Upload files"**.
+3.  **Arrastra este nuevo `index.html`** para reemplazar el anterior.
+4.  Haz clic en **"Commit changes"**.
+
+Espera un par de minutos a que se actualice la página y el inicio de sesión debería funcionar sin problemas. ¡Ya casi lo tien
