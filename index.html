@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Inventario - Autolavado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-button.active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="app" class="container mx-auto p-4 md:p-6 max-w-4xl">
+        
+        <header class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Gestor de Inventario</h1>
+                    <p class="text-gray-500">Tu autolavado, organizado y optimizado.</p>
+                </div>
+                <div class="text-blue-500">
+                    <i class="fas fa-car-side fa-3x"></i>
+                </div>
+            </div>
+             <div class="text-xs text-gray-400 mt-2">ID de Usuario: <span id="userId"></span></div>
+        </header>
+
+        <div class="mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                    <button onclick="changeTab('inventario')" class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-boxes-stacked mr-2"></i>Inventario
+                    </button>
+                    <button onclick="changeTab('operaciones')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-dolly mr-2"></i>Operaciones
+                    </button>
+                    <button onclick="changeTab('analisis')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-chart-pie mr-2"></i>ANÁLISIS
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <main>
+            <div id="inventario-tab">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Productos en Stock</h2>
+                        <button onclick="openModal('addProductModal')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+                            <i class="fas fa-plus mr-2"></i> Nuevo Producto
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Producto</th>
+                                    <th scope="col" class="px-6 py-3">Stock Actual</th>
+                                    <th scope="col" class="px-6 py-3">Unidad</th>
+                                    <th scope="col" class="px-6 py-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-table">
+                                </tbody>
+                        </table>
+                         <p id="loading-inventory" class="text-center text-gray-500 py-4">Cargando inventario...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="operaciones-tab" class="hidden">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-red-600"><i class="fas fa-arrow-down-circle mr-2"></i>Registrar Consumo</h2>
+                        <form id="consume-form">
+                            <div class="mb-4">
+                                <label for="consume-product" class="block text-sm font-medium text-gray-700 mb-1">Producto</label>
+                                <select id="consume-product" name="consume-product" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"></select>
+                            </div>
+                            <div class="mb-4">
+                                <label for="consume-quantity" class="block text-sm font-medium text-gray-700 mb-1">Cantidad Usada</label>
+                                <input type="number" step="0.01" id="consume-quantity" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" required>
+                            </div>
+                            <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Registrar Consumo</button>
+                        </form>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-green-600"><i class="fas fa-arrow-up-circle mr-2"></i>Registrar Compra</h2>
+                        <form id="purchase-form">
+                            <div class="mb-4">
+                                <label for="purchase-product" class="block text-sm font-medium text-gray-700 mb-1">Producto</label>
+                                <select id="purchase-product" name="purchase-product" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"></select>
+                            </div>
+                            <div class="mb-4">
+                                <label for="purchase-quantity" class="block text-sm font-medium text-gray-700 mb-1">Cantidad Recibida</label>
+                                <input type="number" step="0.01" id="purchase-quantity" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="purchase-date" class="block text-sm font-medium text-gray-700 mb-1">Fecha de Compra</o>
+                                <input type="date" id="purchase-date" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm" required>
+                            </div>
+                            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Añadir al Stock</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="analisis-tab" class="hidden">
+                 <div class="bg-white p-6 rounded-xl shadow-md">
+                     <h2 class="text-xl font-semibold mb-4">Análisis de Inventario</h2>
+                     <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-700">
+                         <p><i class="fas fa-info-circle mr-2"></i>Aquí puedes ver el historial de tus operaciones y generar un resumen inteligente para entender mejor tu negocio.</p>
+                     </div>
+
+                     <div class="flex justify-center mb-6">
+                         <button id="generate-analysis-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-lg flex items-center">
+                             <i class="fas fa-chart-line mr-3"></i>Generar Resumen
+                         </button>
+                     </div>
+
+                     <div id="analysis-result-container" class="hidden">
+                         <h3 class="text-lg font-semibold mb-2">Resumen Generado:</h3>
+                         <div id="analysis-result" class="p-4 border rounded-md bg-gray-50 whitespace-pre-wrap text-lg"></div>
+                     </div>
+                     <div id="analysis-loading" class="hidden text-center">
+                         <i class="fas fa-spinner fa-spin fa-2x text-indigo-600"></i>
+                         <p class="mt-2 text-gray-600">Analizando datos... Esto puede tardar un momento.</p>
+                     </div>
+
+                     <hr class="my-6">
+                     
+                     <h3 class="text-lg font-semibold mb-2">Historial de Movimientos</h3>
+                     <div class="overflow-x-auto max-h-96">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Fecha</th>
+                                    <th scope="col" class="px-6 py-3">Tipo</th>
+                                    <th scope="col" class="px-6 py-3">Producto</th>
+                                    <th scope="col" class="px-6 py-3">Cantidad</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table">
+                                </tbody>
+                        </table>
+                        <p id="loading-history" class="text-center text-gray-500 py-4">Cargando historial...</p>
+                     </div>
+                 </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="addProductModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Añadir Nuevo Producto</h3>
+                <div class="mt-2 px-7 py-3">
+                    <form id="add-product-form">
+                        <input id="product-name" type="text" placeholder="Nombre del producto" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none mb-4" required>
+                        <input id="initial-stock" type="number" step="0.01" placeholder="Stock inicial" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none mb-4" required>
+                        <input id="unit-measure" type="text" placeholder="Unidad (ej: litros, unidades)" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none mb-4" required>
+                        <div class="items-center px-4 py-3">
+                            <button type="submit" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                                Guardar Producto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button onclick="closeModal('addProductModal')" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notificationModal" class="fixed bottom-5 right-5 bg-green-500 text-white py-3 px-5 rounded-lg shadow-xl hidden transition-opacity duration-300">
+        <p id="notificationMessage"></p>
+    </div>
+
+    <script type="module">
+        // Importaciones de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, addDoc, getDocs, onSnapshot, writeBatch, runTransaction, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURACIÓN DE FIREBASE ---
+        const firebaseConfig = {
+            "apiKey": "AIzaSyDPGvG0u5QjSgxw2B1hT0NqPjC2yWnY-4c",
+            "authDomain": "datanexus-327500.firebaseapp.com",
+            "projectId": "datanexus-327500",
+            "storageBucket": "datanexus-327500.appspot.com",
+            "messagingSenderId": "427357593259",
+            "appId": "1:427357593259:web:a6f9175a7c582522cf7925"
+        };
+        const appId = 'autolavado-1721787635671';
+        
+        let app, db, auth, userId;
+
+        // --- INICIALIZACIÓN DE LA APP ---
+        async function initialize() {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    document.getElementById('userId').textContent = userId;
+                    setupListeners();
+                    loadInitialData();
+                } else {
+                    try {
+                        await signInAnonymously(auth);
+                    } catch (error) {
+                        console.error("Error en la autenticación anónima:", error);
+                        document.getElementById('loading-inventory').innerText = "Error de autenticación. Verifica la configuración de Firebase.";
+                    }
+                }
+            });
+        }
+
+        // --- REFERENCIAS A COLECCIONES ---
+        const getProductsCollection = () => collection(db, `artifacts/${appId}/users/${userId}/products`);
+        const getHistoryCollection = () => collection(db, `artifacts/${appId}/users/${userId}/history`);
+
+        // --- LÓGICA DE LA INTERFAZ (UI) ---
+        const inventoryTable = document.getElementById('inventory-table');
+        const historyTable = document.getElementById('history-table');
+        const consumeProductSelect = document.getElementById('consume-product');
+        const purchaseProductSelect = document.getElementById('purchase-product');
+        
+        window.changeTab = (tabName) => {
+            ['inventario', 'operaciones', 'analisis'].forEach(tabId => {
+                document.getElementById(`${tabId}-tab`).classList.add('hidden');
+                document.querySelector(`button[onclick="changeTab('${tabId}')"]`).classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+            document.querySelector(`button[onclick="changeTab('${tabName}')"]`).classList.add('active');
+        };
+
+        window.openModal = (modalId) => document.getElementById(modalId).classList.remove('hidden');
+        window.closeModal = (modalId) => document.getElementById(modalId).classList.add('hidden');
+
+        function showNotification(message, isError = false) {
+            const modal = document.getElementById('notificationModal');
+            const messageP = document.getElementById('notificationMessage');
+            
+            messageP.textContent = message;
+            modal.className = `fixed bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-xl transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            modal.classList.remove('hidden');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 3000);
+        }
+
+        // --- RENDERIZADO DE DATOS ---
+        function renderInventory(products) {
+            inventoryTable.innerHTML = '';
+            if (products.length === 0) {
+                document.getElementById('loading-inventory').innerText = "No hay productos. Añade uno para empezar.";
+                return;
+            }
+            document.getElementById('loading-inventory').classList.add('hidden');
+            
+            products.sort((a, b) => a.name.localeCompare(b.name));
+
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${product.name}</td>
+                    <td class="px-6 py-4">${product.stock}</td>
+                    <td class="px-6 py-4">${product.unit}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="deleteProduct('${product.id}')" class="text-red-500 hover:text-red-700 font-medium"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                inventoryTable.appendChild(row);
+            });
+        }
+
+        function renderHistory(history) {
+            historyTable.innerHTML = '';
+             if (history.length === 0) {
+                document.getElementById('loading-history').innerText = "No hay movimientos registrados.";
+                return;
+            }
+            document.getElementById('loading-history').classList.add('hidden');
+            
+            history.sort((a, b) => {
+                const dateA = a.date ? a.date.toDate() : new Date(0);
+                const dateB = b.date ? b.date.toDate() : new Date(0);
+                return dateB - dateA;
+            });
+
+            history.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b hover:bg-gray-50';
+                const typeClass = item.type === 'compra' ? 'text-green-500' : 'text-red-500';
+                const typeIcon = item.type === 'compra' ? 'fas fa-plus-circle' : 'fas fa-minus-circle';
+                
+                const displayDate = item.date ? new Date(item.date.toDate()).toLocaleDateString() : '<i class="text-gray-400">Procesando...</i>';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4">${displayDate}</td>
+                    <td class="px-6 py-4 font-medium ${typeClass}"><i class="${typeIcon} mr-2"></i>${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</td>
+                    <td class="px-6 py-4">${item.productName}</td>
+                    <td class="px-6 py-4">${item.quantity} ${item.unit}</td>
+                `;
+                historyTable.appendChild(row);
+            });
+        }
+
+        function updateProductDropdowns(products) {
+            consumeProductSelect.innerHTML = '<option value="">Selecciona un producto</option>';
+            purchaseProductSelect.innerHTML = '<option value="">Selecciona un producto</option>';
+            
+            products.sort((a, b) => a.name.localeCompare(b.name));
+
+            products.forEach(product => {
+                const option = `<option value="${product.id}">${product.name}</option>`;
+                consumeProductSelect.innerHTML += option;
+                purchaseProductSelect.innerHTML += option;
+            });
+        }
+        
+        let allProducts = [];
+        let allHistory = [];
+
+        function setupListeners() {
+            if (!userId) return;
+            onSnapshot(getProductsCollection(), (snapshot) => {
+                allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderInventory(allProducts);
+                updateProductDropdowns(allProducts);
+            }, (error) => console.error("Error al escuchar productos:", error));
+
+            onSnapshot(getHistoryCollection(), (snapshot) => {
+                allHistory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderHistory(allHistory);
+            }, (error) => console.error("Error al escuchar historial:", error));
+        }
+        
+        async function loadInitialData() {
+            if (!userId) return;
+            try {
+                const productsSnapshot = await getDocs(getProductsCollection());
+                allProducts = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderInventory(allProducts);
+                updateProductDropdowns(allProducts);
+
+                const historySnapshot = await getDocs(getHistoryCollection());
+                allHistory = historySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderHistory(allHistory);
+            } catch (error) {
+                console.error("Error cargando datos iniciales:", error);
+                showNotification("Error al cargar los datos.", true);
+            }
+        }
+
+        // --- LÓGICA DE NEGOCIO ---
+        document.getElementById('add-product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('product-name').value;
+            const stock = parseFloat(document.getElementById('initial-stock').value);
+            const unit = document.getElementById('unit-measure').value;
+
+            try {
+                await addDoc(getProductsCollection(), { name, stock, unit });
+                showNotification("Producto añadido con éxito.");
+                e.target.reset();
+                closeModal('addProductModal');
+            } catch (error) {
+                console.error("Error añadiendo producto: ", error);
+                showNotification("Error al añadir el producto.", true);
+            }
+        });
+
+        document.getElementById('consume-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const productId = document.getElementById('consume-product').value;
+            const quantity = parseFloat(document.getElementById('consume-quantity').value);
+            const product = allProducts.find(p => p.id === productId);
+
+            if (!product || quantity <= 0) {
+                showNotification("Por favor, selecciona un producto y una cantidad válida.", true);
+                return;
+            }
+
+            if (product.stock < quantity) {
+                showNotification(`No hay suficiente stock de ${product.name}. Stock actual: ${product.stock}`, true);
+                return;
+            }
+            
+            try {
+                const productRef = doc(getProductsCollection(), productId);
+                await runTransaction(db, async (transaction) => {
+                    const productDoc = await transaction.get(productRef);
+                    if (!productDoc.exists()) {
+                        throw "¡El producto no existe!";
+                    }
+                    const newStock = productDoc.data().stock - quantity;
+                    transaction.update(productRef, { stock: newStock });
+                });
+
+                await addDoc(getHistoryCollection(), {
+                    productId: productId,
+                    productName: product.name,
+                    quantity: quantity,
+                    unit: product.unit,
+                    type: 'consumo',
+                    date: serverTimestamp()
+                });
+                showNotification("Consumo registrado con éxito.");
+                e.target.reset();
+            } catch (error) {
+                console.error("Error registrando consumo: ", error);
+                showNotification("Error al registrar el consumo.", true);
+            }
+        });
+
+        document.getElementById('purchase-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const productId = document.getElementById('purchase-product').value;
+            const quantity = parseFloat(document.getElementById('purchase-quantity').value);
+            const date = document.getElementById('purchase-date').value;
+            const product = allProducts.find(p => p.id === productId);
+
+            if (!product || quantity <= 0 || !date) {
+                showNotification("Por favor, completa todos los campos.", true);
+                return;
+            }
+
+            try {
+                const productRef = doc(getProductsCollection(), productId);
+                await runTransaction(db, async (transaction) => {
+                    const productDoc = await transaction.get(productRef);
+                    if (!productDoc.exists()) {
+                        throw "¡El producto no existe!";
+                    }
+                    const newStock = productDoc.data().stock + quantity;
+                    transaction.update(productRef, { stock: newStock });
+                });
+
+                await addDoc(getHistoryCollection(), {
+                    productId: productId,
+                    productName: product.name,
+                    quantity: quantity,
+                    unit: product.unit,
+                    type: 'compra',
+                    date: new Date(date)
+                });
+                showNotification("Compra registrada y stock actualizado.");
+                e.target.reset();
+            } catch (error) {
+                console.error("Error registrando compra: ", error);
+                showNotification("Error al registrar la compra.", true);
+            }
+        });
+
+        window.deleteProduct = async (productId) => {
+            const product = allProducts.find(p => p.id === productId);
+            if (confirm(`¿Estás seguro de que quieres eliminar "${product.name}"? Esta acción no se puede deshacer.`)) {
+                try {
+                    const batch = writeBatch(db);
+                    
+                    const productRef = doc(getProductsCollection(), productId);
+                    batch.delete(productRef);
+                    
+                    const historyQuery = query(getHistoryCollection(), where("productId", "==", productId));
+                    const historySnapshot = await getDocs(historyQuery);
+                    historySnapshot.forEach((doc) => {
+                        batch.delete(doc.ref);
+                    });
+
+                    await batch.commit();
+                    showNotification("Producto y su historial eliminados.");
+                } catch (error) {
+                    console.error("Error eliminando producto: ", error);
+                    showNotification("Error al eliminar el producto.", true);
+                }
+            }
+        };
+
+        // --- ANÁLISIS CON IA ---
+        document.getElementById('generate-analysis-btn').addEventListener('click', async () => {
+            const analysisBtn = document.getElementById('generate-analysis-btn');
+            const loadingDiv = document.getElementById('analysis-loading');
+            const resultContainer = document.getElementById('analysis-result-container');
+            const resultDiv = document.getElementById('analysis-result');
+            
+            // Reemplaza "TU_API_KEY_AQUI" con tu propia clave de API de Google AI Studio.
+            const GEMINI_API_KEY = ""; 
+
+            if (GEMINI_API_KEY === "") {
+                resultDiv.innerHTML = '<strong>Error de Configuración:</strong><br>Para usar el análisis en esta versión pública, debes obtener una API Key gratuita de Google AI Studio y pegarla en la variable GEMINI_API_KEY dentro del archivo <strong>index.html</strong>.';
+                resultContainer.classList.remove('hidden');
+                resultDiv.classList.add('text-red-500');
+                return;
+            }
+
+            if (allHistory.length < 3) {
+                showNotification("Necesitas al menos 3 movimientos en el historial para un análisis.", true);
+                return;
+            }
+
+            analysisBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+
+            const historyText = allHistory
+                .filter(item => item.date)
+                .map(item => 
+                    `${item.date.toDate().toISOString().split('T')[0]}: ${item.type} de ${item.quantity} ${item.unit} de ${item.productName}`
+                ).join('\n');
+            
+            const stockText = allProducts.map(p => `${p.name}: ${p.stock} ${p.unit} en stock`).join('\n');
+
+            const prompt = `
+                Eres un asistente de negocios para un taller de autolavado. Analiza los siguientes datos de inventario.
+
+                **Datos de Stock Actual:**
+                ${stockText}
+
+                **Historial de Movimientos:**
+                ${historyText}
+
+                **Tu tarea es generar un resumen MUY CORTO y FÁCIL de leer. Usa el siguiente formato exacto:**
+
+                **🔥 Productos Más Usados:**
+                - [Nombre Producto 1]: Se consumieron X unidades/litros.
+                - [Nombre Producto 2]: Se consumieron Y unidades/litros.
+
+                **🧊 Productos Menos Usados (Estancados):**
+                - [Nombre Producto 3]: Poco uso.
+                - [Nombre Producto 4]: Sin consumo reciente.
+
+                **⚠️ Alerta de Stock Bajo:**
+                - [Nombre Producto 5]: ¡Queda poco! Solo [Stock Actual] [Unidad].
+
+                Usa emojis para que sea más visual. Sé directo y puntual. No añadas texto introductorio ni conclusiones.
+            `;
+
+            try {
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`Error de la API: ${response.statusText}. Cuerpo: ${errorBody}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content.parts[0].text) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    resultDiv.textContent = text;
+                    resultContainer.classList.remove('hidden');
+                    resultDiv.classList.remove('text-red-500');
+                } else {
+                    throw new Error("La respuesta de la IA no tuvo contenido válido.");
+                }
+
+            } catch (error) {
+                console.error("Error generando análisis:", error);
+                resultDiv.textContent = "Hubo un error al generar el análisis. Por favor, inténtalo de nuevo más tarde.";
+                resultContainer.classList.remove('hidden');
+                resultDiv.classList.add('text-red-500');
+            } finally {
+                analysisBtn.disabled = false;
+                loadingDiv.classList.add('hidden');
+            }
+        });
+
+        // Iniciar la aplicación
+        initialize();
+
+    </script>
+</body>
+</html>
+```
+
+***
+
+### Fase 2: Publicar tu Aplicación en GitHub
+
+Ahora que tienes el archivo `index.html` guardado, sigue estos pasos.
+
+**1. Crear una Cuenta en GitHub 📝**
+* Si ya tienes una cuenta, inicia sesión.
+* Si no, ve a [https://github.com/](https://github.com/), haz clic en **"Sign up"** y sigue los pasos para crear tu cuenta gratuita.
+
+**2. Crear un Nuevo Repositorio 📦**
+* Una vez dentro, haz clic en el ícono **"+"** en la esquina superior derecha y selecciona **"New repository"**.
+* **Nombre del Repositorio:** Escribe un nombre corto y sin espacios. Te recomiendo **`gestor-inventario`**.
+* **IMPORTANTE:** Asegúrate de que esté seleccionada la opción **"Public"**. Esto es necesario para que funcione la publicación gratuita.
+* Deja todo lo demás como está y haz clic en el botón verde **"Create repository"**.
+
+**3. Subir tu Archivo `index.html` 📤**
+* En la página de tu nuevo repositorio, busca y haz clic en el link que dice **"uploading an existing file"**.
+* Arrastra el archivo **`index.html`** que guardaste en tu computador y suéltalo en la ventana del navegador.
+* Espera a que se cargue y abajo, haz clic en el botón verde **"Commit changes"**.
+
+**4. Activar GitHub Pages 🚀**
+* Ya con el archivo subido, ve a la pestaña **"Settings"** de tu repositorio.
+* En el menú de la izquierda, haz clic en **"Pages"**.
+* Bajo la sección "Branch", verás un menú desplegable que dice "None". Haz clic en él y selecciona **`main`**.
+* Presiona el botón **"Save"** que está al lado.
+* La página se actualizará y te mostrará un mensaje en un recuadro (generalmente azul o verde) que dice *“Your site is live at”* seguido de tu link. **Ejemplo:** `https://tu-usuario.github.io/gestor-inventario/`
+
+**5. ¡Listo! ✅**
+* ¡Felicidades! Tu aplicación ya está en internet. Haz clic en el link para verla.
+* **Nota importante:** Tu aplicación de inventario funcionará perfectamente, pero la función de **"Generar Resumen"** mostrará un error de configuración. Esto es normal, porque para usar la IA en un sitio público se necesita una clave (API Key) personal. En el código he dejado el lugar exacto donde deberías pegarla si en el futuro decides obtener una (son gratuitas para uso personal desde Google AI Studio).
+
+Guarda tu nuevo link, ¡es la puerta de entrada a tu aplicación desde cualquier dispositi
